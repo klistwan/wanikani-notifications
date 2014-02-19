@@ -1,3 +1,10 @@
+// Hide all console logs when set to false.
+var DEBUG = true;
+if (!DEBUG) { console.log = function() {} };
+
+var apiKey = 'fdc6a0be3d5663f9dc8b6e641d55a514';
+var maxMinutesUntilNextReview = 60;
+
 function httpGet(theUrl) {
     var xmlHttp = null;
 
@@ -7,10 +14,9 @@ function httpGet(theUrl) {
     return xmlHttp.responseText;
 }
 
-var apiKey = 'fdc6a0be3d5663f9dc8b6e641d55a514';
-
 function getStudyQueue(apiKey) {
     var requestURL = 'https://www.wanikani.com/api/user/' + apiKey + '/study-queue';
+    console.log("Success API call");
     return JSON.parse(httpGet(requestURL));
 }
 
@@ -24,23 +30,14 @@ function handleNoAPIKey() {
     }
 }
 
-// Set the number of reviews available and notify the user.
 function setReviewCount(reviewsAvailable) {
-    chrome.storage.local.set({"reviewsAvailable": reviewsAvailable});
+    chrome.storage.sync.set({"reviewsAvailable": reviewsAvailable});
     if (reviewsAvailable > 0) {
-        // showNotification();
         // If reviews are available, change icon to saturated.
         chrome.browserAction.setIcon({path: 'icon_128.png'});
-    } else {
-        // If none are available, change icon to desaturated.
-        chrome.browserAction.setIcon({path: 'icon_128_desaturated.png'});
+        showNotification();
     }
 }
-
-chrome.browserAction.onClicked.addListener(function() {
-    // TOOD: Only let this happen when the user has reviews.
-    chrome.tabs.create({url: "https://www.wanikani.com"});
-});
 
 // If notifications are enabled, display a notification.
 function showNotification() {
@@ -52,6 +49,36 @@ function showNotification() {
     notification.show();
 }
 
+function minutes(number) {
+    // (seconds in a minute) * (miliseconds in a second) * number of minutes you need
+    return 60 * 1000 * number;
+}
+
+function setMinutesUntilNextReview(nextReviewDate) {
+    // First, calculate minutes until next review.
+    var currentTime = Date.now().toString().substring(0, 10); // WaniKani doesn't give miliseconds.
+    var minutesUntilNextReview = Math.floor((requestedInformation.next_review_date - currentTime) / 60);
+
+    // Then, set it in storage and change the icon.
+    chrome.storage.sync.set({"minutesUntilNextReview": minutesUntilNextReview});
+    console.log("Set minutes until next review:", minutesUntilNextReview);
+    chrome.browserAction.setIcon({path: 'timer.png'});
+
+    if (minutesUntilNextReview < maxMinutesUntilNextReview) {
+        // Reset alarm for 60 seconds from now to update icon.
+        createCountdownAlarm(minutes(1));
+    } else {
+        // Reset alarm when it hits maxMinutesUntilNextReview minutes until review.
+        createCountdownAlarm(minutesUntilNextReview - maxMinutesUntilNextReview);
+    }
+}
+
+function createCountdownAlarm(minutesAway) {
+    // Set a countdown alarm X minutes away.
+    chrome.alarms.create("countdown", {when: Date.now() + minutesAway});
+    console.log("Alarm to activate in how many minutes?", minutesAway);
+}
+
 function init() {
     // Get API key from Chrome's storage.
     chrome.storage.sync.get("apiKey", function(data) {
@@ -61,22 +88,34 @@ function init() {
         // Retrieve data from the API.
         requestedInformation = getStudyQueue(apiKey).requested_information;
 
-        // Set the review count
-        setReviewCount(requestedInformation.reviews_available);
-
-        // Set the next review date
-        var nextReviewTime = requestedInformation.next_review_date;
-        chrome.storage.local.set({"nextReviewTime": nextReviewTime});
-
-        // Schedule the next refresh
-        chrome.alarms.create("refresh", {when: nextReviewTime} );
+        // Set the review count or time until next review.
+        if (requestedInformation.reviews_available) {
+            setReviewCount(requestedInformation.reviews_available);
+        } else {
+            setMinutesUntilNextReview(requestedInformation.next_review_date);
+        }
     });
 }
 
-// When a "refresh" alarm goes off, fetch new data.
 chrome.alarms.onAlarm.addListener(function(alarm) {
-    if (alarm.name === "refresh") {
-        init();
+    // TODO: Ignore the initial listen when the first alarm is created.
+    if (alarm.name == 'countdown') {
+        console.log("Countdown alarmed was called by a listener.");
+        // Update local storage.
+        chrome.storage.sync.get('minutesUntilNextReview', function(data) {
+            // Decrement time until next review in storage.
+            chrome.storage.sync.set({'minutesUntilNextReview': data.minutesUntilNextReview - 1});
+            console.log("Minutes until next review:", data.minutesUntilNextReview);
+            // Set the alarm to decrement in 1 minute.
+            if (data.minutesUntilNextReview > 0) {
+                chrome.alarms.create("countdown", {when: Date.now() + minutes(1)});
+                console.log("Set alarm for timer to update next minute.");
+            } else {
+                showNotification();
+                // TODO: It should update localstorage with reviews available.
+                // You need an API call to retrieve the latest amount.
+            }
+        });
     }
 });
 
