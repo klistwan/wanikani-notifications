@@ -26,10 +26,14 @@ function handleNoAPIKey() {
 
 // Set the number of reviews available and notify the user.
 function setReviewCount(reviewsAvailable) {
+    chrome.storage.local.set({"reviewsAvailable": reviewsAvailable});
     if (reviewsAvailable > 0) {
-        chrome.storage.local.set({"reviewsAvailable": reviewsAvailable}, function() {
-            showNotification();
-        });
+        // showNotification();
+        // If reviews are available, change icon to saturated.
+        chrome.browserAction.setIcon({path: 'icon_128.png'});
+    } else {
+        // If none are available, change icon to desaturated.
+        chrome.browserAction.setIcon({path: 'icon_128_desaturated.png'});
     }
 }
 
@@ -72,7 +76,7 @@ function init() {
 // When a "refresh" alarm goes off, fetch new data.
 chrome.alarms.onAlarm.addListener(function(alarm) {
     if (alarm.name === "refresh") {
-        fetch_reviews();
+        init();
     }
 });
 
