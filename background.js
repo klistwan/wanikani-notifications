@@ -3,7 +3,7 @@ var DEBUG = true;
 if (!DEBUG) { console.log = function() {} };
 
 var apiKey = 'fdc6a0be3d5663f9dc8b6e641d55a514';
-var maxMinutesUntilNextReview = 60;
+var maxMinutesUntilNextReview = 5;
 
 function httpGet(theUrl) {
     var xmlHttp = null;
@@ -61,8 +61,8 @@ function setMinutesUntilNextReview(nextReviewDate) {
 
     // Then, set it in storage and change the icon.
     chrome.storage.sync.set({"minutesUntilNextReview": minutesUntilNextReview});
-    console.log("Set minutes until next review:", minutesUntilNextReview);
-    chrome.browserAction.setIcon({path: 'timer.png'});
+    console.log("Minutes until next review:", minutesUntilNextReview);
+    setNewIcon(minutesUntilNextReview);
 
     if (minutesUntilNextReview < maxMinutesUntilNextReview) {
         // Reset alarm for 60 seconds from now to update icon.
@@ -71,6 +71,18 @@ function setMinutesUntilNextReview(nextReviewDate) {
         // Reset alarm when it hits maxMinutesUntilNextReview minutes until review.
         createCountdownAlarm(minutesUntilNextReview - maxMinutesUntilNextReview);
     }
+}
+
+function setNewIcon(minutesUntilNextReview) {
+    var iconFileName = '';
+    if (minutesUntilNextReview >= 5) {
+        iconFileName += '5';
+    } else if (minutesUntilNextReview > 0) {
+        iconFileName += minutesUntilNextReview.toString();
+    } else {
+        iconFileName = 'crab-128';
+    }
+    chrome.browserAction.setIcon({path: 'images/' + iconFileName + '.png'});
 }
 
 function createCountdownAlarm(minutesAway) {
