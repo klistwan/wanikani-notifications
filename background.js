@@ -19,8 +19,7 @@ function httpGet(theUrl) {
 }
 
 function getNextReviewDate() {
-  var apiKey = getAPIKey();
-  var requestURL = 'https://www.wanikani.com/api/user/' + apiKey + '/study-queue';
+  var requestURL = 'https://www.wanikani.com/api/user/' + options.apiKey + '/study-queue';
   console.log("Retrieved next review date from the WaniKani API.");
   return JSON.parse(httpGet(requestURL)).requested_information.next_review_date;
 }
@@ -39,8 +38,8 @@ function updateIcon() {
     chrome.browserAction.setBadgeBackgroundColor({color: [190, 190, 190, 230]});
     chrome.browserAction.setBadgeText({text:"?"});
   } else {
-    chrome.browserAction.setIcon({path: {'19': 'wanikani.png'}});
-    chrome.browserAction.setBadgeBackgroundColor({color: [161, 229, 255, 255]});
+    chrome.browserAction.setIcon({path: {'19': 'wanikani-api-key.png'}});
+    chrome.browserAction.setBadgeBackgroundColor({color: [255, 29, 0, 255]});
     chrome.browserAction.setBadgeText({text: localStorage.minutesUntilNextReview});
     console.log("Updated minutes until next review:", localStorage.minutesUntilNextReview);
   }
@@ -95,14 +94,14 @@ function onWatchdog() {
 }
 
 function getAPIKey() {
-  var apiKey = chrome.storage.sync.get(['apiKey'], function(items) {
-    console.log('API key retrieved:', items);
+  chrome.storage.sync.get(['apiKey'], function(items) {
+    if (items.apiKey) {
+      return items.apiKey;
+    } else {
+      console.log("No API key retrieved. Opening up options.html.");
+      chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
+    }
   });
-  if (!apiKey) {
-    console.log("No API key retrieved. Opening up options.html.");
-    chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
-  }
-  return apiKey;
 }
 
 function loadOptions(callback) {
