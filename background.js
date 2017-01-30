@@ -3,7 +3,7 @@ var DEBUG = true;
 if (!DEBUG) { console.log = function() {} };
 
 var apiKey = 'fdc6a0be3d5663f9dc8b6e641d55a514';
-var maxMinutesUntilNextReview = 5;
+var maxMinutesUntilNextReview = 99;
 
 function httpGet(theUrl) {
     var xmlHttp = null;
@@ -60,7 +60,7 @@ function setMinutesUntilNextReview(nextReviewDate) {
     setNewIcon(minutesUntilNextReview);
 
     if (minutesUntilNextReview < maxMinutesUntilNextReview) {
-        // Reset alarm for 60 seconds from now to update icon.
+        // Reset alarm in a minute to update the icon.
         createCountdownAlarm(minutes(1));
     } else {
         // Reset alarm when it hits maxMinutesUntilNextReview minutes until review.
@@ -68,16 +68,17 @@ function setMinutesUntilNextReview(nextReviewDate) {
     }
 }
 
-function setNewIcon(minutesUntilNextReview) {
-    var iconFileName = '';
-    if (minutesUntilNextReview >= 5) {
-        iconFileName += '5';
-    } else if (minutesUntilNextReview > 0) {
-        iconFileName += minutesUntilNextReview.toString();
-    } else {
-        iconFileName = 'crab-128';
-    }
-    chrome.browserAction.setIcon({path: 'images/' + iconFileName + '.png'});
+function updateIcon() {
+  if (!localStorage.hasOwnProperty('minutesUntilNextReview')) {
+    chrome.browserAction.setIcon({path: {'19': 'wanikani-no-api-key.png'}});
+    chrome.browserAction.setBadgeBackgroundColor({color: [190, 190, 190, 230]});
+    chrome.browserAction.setBadgeText({text:"?"});
+  } else {
+    var minutesUntilNextReview = localStorage.minutesUntilNextReview != '0' ? localStorage.minutesUntilNextReview : '';
+    chrome.browserAction.setIcon({path: {'19': 'wanikani.png'}});
+    chrome.browserAction.setBadgeBackgroundColor({color: [161, 229, 255, 255]});
+    chrome.browserAction.setBadgeText({text: minutesUntilNextReview});
+  }
 }
 
 function createCountdownAlarm(minutesAway) {
@@ -100,7 +101,6 @@ function init() {
             console.log("Failed API call. No information retrieved.");
             return;
 
-        // Set the review count or time until next review.
         if (requestedInformation.reviews_available) {
             setReviewCount(requestedInformation.reviews_available);
         } else {
