@@ -101,6 +101,25 @@ function startRequest(params) {
   );
 }
 
+function onAlarm(alarm) {
+  console.log('Got alarm', alarm);
+  // |alarm| can be undefined because onAlarm also gets called from
+  // window.setTimeout on old chrome versions.
+  if (alarm && alarm.name == 'watchdog') {
+    onWatchdog();
+  } else {
+    startRequest({scheduleRequest:true});
+  }
+}
+
+function onWatchdog() {
+  chrome.alarms.get('refresh', function(alarm) {
+    if (!alarm) {
+      startRequest({scheduleRequest:true});
+    }
+  });
+}
+
 function main() {
   chrome.alarms.onAlarm.addListener(onAlarm);
   chrome.browserAction.onClicked.addListener(goToWanikani());
