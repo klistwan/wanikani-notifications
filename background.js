@@ -16,12 +16,7 @@ function httpGet(theUrl) {
 
 function getStudyQueue(apiKey) {
     var requestURL = 'https://www.wanikani.com/api/user/' + apiKey + '/study-queue';
-    console.log("Success API call");
     return JSON.parse(httpGet(requestURL));
-}
-
-function getRequestedInformation(request) {
-    return request.requested_information;
 }
 
 function handleNoAPIKey() {
@@ -34,7 +29,7 @@ function setReviewCount(reviewsAvailable) {
     chrome.storage.sync.set({"reviewsAvailable": reviewsAvailable});
     if (reviewsAvailable > 0) {
         // If reviews are available, change icon to saturated.
-        chrome.browserAction.setIcon({path: 'icon_128.png'});
+        chrome.browserAction.setIcon({path: 'icon_128_saturated.png'});
         showNotification();
     }
 }
@@ -98,7 +93,12 @@ function init() {
         handleNoAPIKey();
 
         // Retrieve data from the API.
-        requestedInformation = getStudyQueue(apiKey).requested_information;
+        var requestedInformation = getStudyQueue(apiKey).requested_information;
+
+        // If no data returned, escape.
+        if (!requestedInformation) {
+            console.log("Failed API call. No information retrieved.");
+            return;
 
         // Set the review count or time until next review.
         if (requestedInformation.reviews_available) {
