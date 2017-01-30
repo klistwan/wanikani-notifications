@@ -1,3 +1,11 @@
+function restoreAPIKey() {
+  chrome.storage.sync.get({
+    apiKey: '0',
+  }, function(items) {
+    document.getElementById('apiKey').value = items.apiKey;
+  });
+}
+
 function saveAPIKey(e) {
   e.preventDefault();
 
@@ -25,6 +33,7 @@ function main() {
     return;
   }
   document.getElementById('optionsForm').addEventListener('submit', saveAPIKey);
+  document.addEventListener('DOMContentLoaded', restoreAPIKey);
 }
 
 main();
