@@ -4,7 +4,6 @@ if (!DEBUG) {
   console.log = function() {};
 }
 
-var maxMinutesUntilNextReview = 99;
 var wanikaniReviewUrl = 'https://www.wanikani.com/review/';
 
 function httpGet(theUrl) {
@@ -16,9 +15,17 @@ function httpGet(theUrl) {
 }
 
 function getNextReviewDate() {
-  var requestURL = 'https://www.wanikani.com/api/user/' + localStorage.get(apiKey) + '/study-queue';
+  var apiKey = getAPIKey();
+  var requestURL = 'https://www.wanikani.com/api/user/' + apiKey + '/study-queue';
   console.log("Retrieved next review date from the WaniKani API.");
   return JSON.parse(httpGet(requestURL)).requested_information.next_review_date;
+}
+
+function getMinutesUntilNextReview() {
+  var nextReviewDate = getNextReviewDate();
+  var currentTime = Math.floor(Date.now() / 1000);
+  var minutesUntilNextReview = Math.ceil((nextReviewDate - currentTime) / 60);
+  return Math.max(0, minutesUntilNextReview);
 }
 
 function updateIcon() {
@@ -35,12 +42,6 @@ function updateIcon() {
   }
 }
 
-function createCountdownAlarm(minutesAway) {
-  // Set a countdown alarm X minutes away.
-  chrome.alarms.create("countdown", {when: Date.now() + minutesAway});
-  console.log("Alarm to activate in", minutesAway, "minutes.");
-}
-
 function goToWanikani() {
   chrome.tabs.query({
       url: wanikaniReviewUrl
@@ -49,31 +50,26 @@ function goToWanikani() {
     if (tab !== undefined) {
       chrome.tabs.update(tab.id, { selected: true });
       chrome.windows.update(tab.windowId, { "focused": true });
-      startRequest({ scheduleRequest: false, showLoadingAnimation: false });
+      startRequest({ scheduleRequest: false });
       return;
     }
     chrome.tabs.create({ url: wanikaniReviewUrl });
   });
 }
 
-function refresh() {
-  startRequest({scheduleRequest: true, showLoadingAnimation: false});
-}
-
 function scheduleRequest() {
   chrome.alarms.create('refresh', {periodInMinutes: 1});
 }
 
+function updateMinutesUntilNextReview(minutes) {
+  localStorage.minutesUntilNextReview = minutes;
+  updateIcon();
+}
+
 function startRequest(params) {
   if (params && params.scheduleRequest) scheduleRequest();
-  getMinutesUntilReview(
-    function(count) {
-      updateMinutesUntilReview(count);
-    },
-    function() {
-      updateIcon();
-    }
-  );
+  var minutes = getMinutesUntilNextReview();
+  updateMinutesUntilNextReview(minutes);
 }
 
 function onAlarm(alarm) {
@@ -92,21 +88,17 @@ function onWatchdog() {
   });
 }
 
-function getAPIkey(callback) {
-  apiKey = chrome.storage.sync.get(apiKey);
+function getAPIKey() {
+  var apiKey = chrome.storage.sync.get('apiKey');
   if (!apiKey) {
     chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
   }
   return apiKey;
 }
 
-function refresh() {
-  startRequest({scheduleRequest: true});
-}
-
 function main() {
   chrome.alarms.onAlarm.addListener(onAlarm);
-  chrome.browserAction.onClicked.addListener(goToWanikani());
+  chrome.browserAction.onClicked.addListener(goToWanikani);
 
   chrome.runtime.onStartup.addListener(function() {
     startRequest({scheduleRequest:false});
