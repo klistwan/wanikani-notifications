@@ -52,8 +52,9 @@ function goToWanikani() {
       chrome.windows.update(tab.windowId, { "focused": true });
       startRequest({ scheduleRequest: false });
       return;
-    }
+    } else {
     chrome.tabs.create({ url: wanikaniReviewUrl });
+    }
   });
 }
 
