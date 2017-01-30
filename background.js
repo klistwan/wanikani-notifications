@@ -54,7 +54,7 @@ function updateIcon() {
   } else {
     chrome.browserAction.setIcon({path: {'19': 'wanikani.png'}});
     chrome.browserAction.setBadgeBackgroundColor({color: [161, 229, 255, 255]});
-    chrome.browserAction.setBadgeText({text: localStorage.minutesUntilNextReview;});
+    chrome.browserAction.setBadgeText({text: localStorage.minutesUntilNextReview});
   }
 }
 
