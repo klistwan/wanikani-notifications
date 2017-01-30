@@ -70,6 +70,7 @@ function updateMinutesUntilNextReview(minutes) {
 function startRequest(params) {
   if (params && params.scheduleRequest) scheduleRequest();
   var minutes = getMinutesUntilNextReview();
+  console.log("Got minutes until next review:", minutes);
   updateMinutesUntilNextReview(minutes);
 }
 
@@ -90,7 +91,9 @@ function onWatchdog() {
 }
 
 function getAPIKey() {
-  var apiKey = chrome.storage.sync.get('apiKey');
+  var apiKey = chrome.storage.sync.get(['apiKey'], function(items) {
+    console.log('API key retrieved:', items);
+  });
   if (!apiKey) {
     chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
   }
