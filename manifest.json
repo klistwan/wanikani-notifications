@@ -1,14 +1,14 @@
 {
-  "name": "WaniKani Review Available Notifier",
+  "name": "WaniKani New Reviews Notifier",
   "version": "0.1",
   "manifest_version": 2,
-  "description": "This extension notifies you when you have reviews available in WaniKani.",
+  "description": "This extension notifies you when you have new reviews in WaniKani.",
   "icons": {"128": "wanikani.png"},
   "background" : {"scripts": ["background.js"], "persistent": false},
   "options_page": "options.html",
-  "permissions": ["alarms", "storage", "notifications", "https://www.wanikani.com/"],
+  "permissions": ["alarms", "storage", "https://www.wanikani.com/"],
   "browser_action": {
-    "default_title": "WaniKani Notifier",
+    "default_title": "WaniKani New Reviews Notifier",
     "default_icon": "wanikani.png"
   }
 }
