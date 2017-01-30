@@ -2,7 +2,6 @@
 var DEBUG = true;
 if (!DEBUG) { console.log = function() {} };
 
-var apiKey = 'fdc6a0be3d5663f9dc8b6e641d55a514';
 var maxMinutesUntilNextReview = 99;
 
 function httpGet(theUrl) {
