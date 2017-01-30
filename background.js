@@ -13,39 +13,14 @@ function httpGet(theUrl) {
     return xmlHttp.responseText;
 }
 
-function getStudyQueue(apiKey) {
-    var requestURL = 'https://www.wanikani.com/api/user/' + apiKey + '/study-queue';
+function getStudyQueue(APIKey) {
+    var requestURL = 'https://www.wanikani.com/api/user/' + APIKey + '/study-queue';
     return JSON.parse(httpGet(requestURL));
 }
 
-function handleNoAPIKey() {
-    if (!apiKey) {
-        chrome.browserAction.setTitle({"title": "Click to add your API key!"});
-    }
-}
-
-function setReviewCount(reviewsAvailable) {
-    chrome.storage.sync.set({"reviewsAvailable": reviewsAvailable});
-    if (reviewsAvailable > 0) {
-        // If reviews are available, change icon to saturated.
-        chrome.browserAction.setIcon({path: 'icon_128_saturated.png'});
-        showNotification();
-    }
-}
-
-// If notifications are enabled, display a notification.
-function showNotification() {
-    var notification = webkitNotifications.createNotification(
-        "icon_128.png",
-        "WaniKani",
-        "You have new reviews on WaniKani!"
-    );
-    notification.show();
-}
-
-function minutes(number) {
-    // (seconds in a minute) * (miliseconds in a second) * number of minutes you need
-    return 60 * 1000 * number;
+function convertMinutesToMiliseconds(numberOfMinutes) {
+    // (seconds in a minute) * (miliseconds in a second) * number of minutes
+    return 60 * 1000 * numberOfMinutes;
 }
 
 function setMinutesUntilNextReview(nextReviewDate) {
@@ -53,18 +28,19 @@ function setMinutesUntilNextReview(nextReviewDate) {
     var currentTime = Date.now().toString().substring(0, 10); // WaniKani doesn't give miliseconds.
     var minutesUntilNextReview = Math.floor((requestedInformation.next_review_date - currentTime) / 60);
 
-    // Then, set it in storage and change the icon.
-    chrome.storage.sync.set({"minutesUntilNextReview": minutesUntilNextReview});
-    console.log("Minutes until next review:", minutesUntilNextReview);
+
     setNewIcon(minutesUntilNextReview);
 
     if (minutesUntilNextReview < maxMinutesUntilNextReview) {
         // Reset alarm in a minute to update the icon.
-        createCountdownAlarm(minutes(1));
+        createCountdownAlarm(convertMinutesToMiliseconds(1));
     } else {
         // Reset alarm when it hits maxMinutesUntilNextReview minutes until review.
         createCountdownAlarm(minutesUntilNextReview - maxMinutesUntilNextReview);
     }
+    // Save it in storage.
+    chrome.storage.sync.set({"minutesUntilNextReview": minutesUntilNextReview});
+    console.log("Saved the number of minutes until the next review:", minutesUntilNextReview);
 }
 
 function updateIcon() {
@@ -86,11 +62,22 @@ function createCountdownAlarm(minutesAway) {
     console.log("Alarm to activate in how many minutes?", minutesAway);
 }
 
+function openOptionsPage(){
+  var optionsUrl = chrome.extension.getURL('options.html');
+  chrome.tabs.query({url: optionsUrl}, function(tabs) {
+    if (tabs.length) {
+      chrome.tabs.update(tabs[0].id, {active: true});
+    } else {
+      chrome.tabs.create({url: optionsUrl});
+    }
+  });
+}
+
 function init() {
     // Get API key from Chrome's storage.
     chrome.storage.sync.get("apiKey", function(data) {
         // If the API key isn't set, we can't do anything
-        handleNoAPIKey();
+        openOptionsPage();
 
         // Retrieve data from the API.
         var requestedInformation = getStudyQueue(apiKey).requested_information;

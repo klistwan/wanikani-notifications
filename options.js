@@ -8,7 +8,6 @@ function restoreAPIKey() {
 
 function saveAPIKey(e) {
   e.preventDefault();
-
   var apiKey = document.getElementById('apiKey').value;
 
   chrome.storage.sync.set({
