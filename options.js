@@ -8,7 +8,7 @@ function saveAPIKey(e) {
   }, function() {
     // Update status to let user know options were saved.
     var status = document.getElementById('status');
-    status.textContent = 'Options saved.';
+    status.textContent = 'API key saved.';
     setTimeout(function() {
       status.textContent = '';
     }, 3000);
