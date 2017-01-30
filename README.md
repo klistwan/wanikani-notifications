@@ -1,3 +1,9 @@
+WaniKani New Reviews Notifier
+======================
+
+![Screenshot](screenshot.png)
+
+
 Features
 --------
 
