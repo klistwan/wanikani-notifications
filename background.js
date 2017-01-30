@@ -26,11 +26,15 @@ function convertMinutesToMiliseconds(numberOfMinutes) {
 function setMinutesUntilNextReview(nextReviewDate) {
     // First, calculate minutes until next review.
     var currentTime = Date.now().toString().substring(0, 10); // WaniKani doesn't give miliseconds.
-    var minutesUntilNextReview = Math.floor((requestedInformation.next_review_date - currentTime) / 60);
+    var minutesUntilNextReview = max(0, Math.floor((requestedInformation.next_review_date - currentTime) / 60));
 
+    // Update icon.
+    chrome.storage.sync.set({"minutesUntilNextReview": minutesUntilNextReview});
+    console.log("Saved the number of minutes until the next review:", minutesUntilNextReview);
+    updateIcon();
 
-    setNewIcon(minutesUntilNextReview);
-
+    // Set alarm.
+    // TODO: Handle case where minutesUntilNextReview = 0.
     if (minutesUntilNextReview < maxMinutesUntilNextReview) {
         // Reset alarm in a minute to update the icon.
         createCountdownAlarm(convertMinutesToMiliseconds(1));
@@ -40,7 +44,6 @@ function setMinutesUntilNextReview(nextReviewDate) {
     }
     // Save it in storage.
     chrome.storage.sync.set({"minutesUntilNextReview": minutesUntilNextReview});
-    console.log("Saved the number of minutes until the next review:", minutesUntilNextReview);
 }
 
 function updateIcon() {
@@ -49,17 +52,16 @@ function updateIcon() {
     chrome.browserAction.setBadgeBackgroundColor({color: [190, 190, 190, 230]});
     chrome.browserAction.setBadgeText({text:"?"});
   } else {
-    var minutesUntilNextReview = localStorage.minutesUntilNextReview != '0' ? localStorage.minutesUntilNextReview : '';
     chrome.browserAction.setIcon({path: {'19': 'wanikani.png'}});
     chrome.browserAction.setBadgeBackgroundColor({color: [161, 229, 255, 255]});
-    chrome.browserAction.setBadgeText({text: minutesUntilNextReview});
+    chrome.browserAction.setBadgeText({text: localStorage.minutesUntilNextReview;});
   }
 }
 
 function createCountdownAlarm(minutesAway) {
     // Set a countdown alarm X minutes away.
     chrome.alarms.create("countdown", {when: Date.now() + minutesAway});
-    console.log("Alarm to activate in how many minutes?", minutesAway);
+    console.log("Alarm to activate in", minutesAway, "minutes.");;
 }
 
 function openOptionsPage(){
