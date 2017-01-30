@@ -1,7 +1,7 @@
 function saveAPIKey(e) {
   e.preventDefault();
 
-  var quietHours = document.getElementById('apiKey').value;
+  var apiKey = document.getElementById('apiKey').value;
 
   chrome.storage.sync.set({
     apiKey: apiKey
