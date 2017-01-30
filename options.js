@@ -24,7 +24,7 @@ function main() {
     status.textContent = 'Error: Could not load settings. Please upgrade Chrome.';
     return;
   }
-  document.getElementById('optionsForm').addEventListener('submit', saveOptions);
+  document.getElementById('optionsForm').addEventListener('submit', saveAPIKey);
 }
 
 main();
