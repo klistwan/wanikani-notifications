@@ -9,7 +9,7 @@
     "default_icon": "wanikani-no-api-key.png"
   },
   "background" : {
-    "scripts": ["background.html"], 
+    "scripts": ["background.js"], 
     "persistent": false
   },
   "options_page": "options.html",

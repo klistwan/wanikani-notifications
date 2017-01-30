@@ -1,6 +1,6 @@
 function restoreAPIKey() {
   chrome.storage.sync.get({
-    apiKey: '0',
+    apiKey: '',
   }, function(items) {
     document.getElementById('apiKey').value = items.apiKey;
   });
