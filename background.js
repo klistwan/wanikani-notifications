@@ -4,6 +4,10 @@ if (!DEBUG) {
   console.log = function() {};
 }
 
+var options = {
+  apiKey: ''
+};
+
 var wanikaniReviewUrl = 'https://www.wanikani.com/review/';
 
 function httpGet(theUrl) {
@@ -95,9 +99,28 @@ function getAPIKey() {
     console.log('API key retrieved:', items);
   });
   if (!apiKey) {
+    console.log("No API key retrieved. Opening up options.html.");
     chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
   }
   return apiKey;
+}
+
+function loadOptions(callback) {
+  if (!chrome || !chrome.storage || !chrome.storage.sync) {
+    callback(false);
+    return;
+  }
+
+  chrome.storage.sync.get({
+    apiKey: ''
+  }, function(items) {
+    options.apiKey = items.apiKey;
+    callback(true);
+  });
+}
+
+function refresh() {
+  startRequest({scheduleRequest: true});
 }
 
 function main() {
@@ -107,6 +130,15 @@ function main() {
   chrome.runtime.onStartup.addListener(function() {
     startRequest({scheduleRequest:false});
     updateIcon();
+  });
+
+  loadOptions(function () {
+    refresh();
+    chrome.storage.onChanged.addListener(function(changes, namespace) {
+      loadOptions(function () {
+        refresh();
+      });
+    });
   });
 }
 
