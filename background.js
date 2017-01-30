@@ -15,48 +15,23 @@ function httpGet(theUrl) {
   return xmlHttp.responseText;
 }
 
-function getStudyQueue(APIKey) {
-  var requestURL = 'https://www.wanikani.com/api/user/' + APIKey + '/study-queue';
-  return JSON.parse(httpGet(requestURL));
-} 
-
-function convertMinutesToMiliseconds(numberOfMinutes) {
-  // (seconds in a minute) * (miliseconds in a second) * number of minutes
-  return 60 * 1000 * numberOfMinutes;
-}
-
-function setMinutesUntilNextReview(nextReviewDate) {
-  // First, calculate minutes until next review.
-  var currentTime = Date.now().toString().substring(0, 10); // WaniKani doesn't give miliseconds.
-  var minutesUntilNextReview = Math.max(0, Math.floor((nextReviewDate - currentTime) / 60));
-
-  // Update icon.
-  chrome.storage.sync.set({"minutesUntilNextReview": minutesUntilNextReview});
-  console.log("Saved the number of minutes until the next review:", minutesUntilNextReview);
-  updateIcon();
-
-  // Set alarm.
-  // TODO: Handle case where minutesUntilNextReview = 0.
-  if (minutesUntilNextReview < maxMinutesUntilNextReview) {
-    // Reset alarm in a minute to update the icon.
-    createCountdownAlarm(convertMinutesToMiliseconds(1));
-  } else {
-    // Reset alarm when it hits maxMinutesUntilNextReview minutes until review.
-    createCountdownAlarm(minutesUntilNextReview - maxMinutesUntilNextReview);
-  }
-  // Save it in storage.
-  chrome.storage.sync.set({"minutesUntilNextReview": minutesUntilNextReview});
+function getNextReviewDate() {
+  var requestURL = 'https://www.wanikani.com/api/user/' + localStorage.get(apiKey) + '/study-queue';
+  console.log("Retrieved next review date from the WaniKani API.");
+  return JSON.parse(httpGet(requestURL)).requested_information.next_review_date;
 }
 
 function updateIcon() {
   if (!localStorage.hasOwnProperty('minutesUntilNextReview')) {
-  chrome.browserAction.setIcon({path: {'19': 'wanikani-no-api-key.png'}});
-  chrome.browserAction.setBadgeBackgroundColor({color: [190, 190, 190, 230]});
-  chrome.browserAction.setBadgeText({text:"?"});
+    console.log("Don't have minutes until next review in storage. :(");
+    chrome.browserAction.setIcon({path: {'19': 'wanikani-no-api-key.png'}});
+    chrome.browserAction.setBadgeBackgroundColor({color: [190, 190, 190, 230]});
+    chrome.browserAction.setBadgeText({text:"?"});
   } else {
-  chrome.browserAction.setIcon({path: {'19': 'wanikani.png'}});
-  chrome.browserAction.setBadgeBackgroundColor({color: [161, 229, 255, 255]});
-  chrome.browserAction.setBadgeText({text: localStorage.minutesUntilNextReview});
+    chrome.browserAction.setIcon({path: {'19': 'wanikani.png'}});
+    chrome.browserAction.setBadgeBackgroundColor({color: [161, 229, 255, 255]});
+    chrome.browserAction.setBadgeText({text: localStorage.minutesUntilNextReview});
+    console.log("Updated minutes until next review:", localStorage.minutesUntilNextReview);
   }
 }
 
@@ -102,9 +77,6 @@ function startRequest(params) {
 }
 
 function onAlarm(alarm) {
-  console.log('Got alarm', alarm);
-  // |alarm| can be undefined because onAlarm also gets called from
-  // window.setTimeout on old chrome versions.
   if (alarm && alarm.name == 'watchdog') {
     onWatchdog();
   } else {
@@ -120,6 +92,18 @@ function onWatchdog() {
   });
 }
 
+function getAPIkey(callback) {
+  apiKey = chrome.storage.sync.get(apiKey);
+  if (!apiKey) {
+    chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
+  }
+  return apiKey;
+}
+
+function refresh() {
+  startRequest({scheduleRequest: true});
+}
+
 function main() {
   chrome.alarms.onAlarm.addListener(onAlarm);
   chrome.browserAction.onClicked.addListener(goToWanikani());
@@ -127,15 +111,6 @@ function main() {
   chrome.runtime.onStartup.addListener(function() {
     startRequest({scheduleRequest:false});
     updateIcon();
-  });
-
-  loadOptions(function () {
-    refresh();
-    chrome.storage.onChanged.addListener(function(changes, namespace) {
-      loadOptions(function () {
-        refresh();
-      });
-    });
   });
 }
 
