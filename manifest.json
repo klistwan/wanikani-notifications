@@ -1,6 +1,6 @@
 {
   "name": "WaniKani New Reviews Notifier",
-  "version": "0.1",
+  "version": "1.0",
   "manifest_version": 2,
   "description": "Display the number of minutes until your next reviews in WaniKani.",
   "author": "Konrad Listwan <konrad.listwan@gmail.com>",
