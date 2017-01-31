@@ -2,7 +2,7 @@
   "name": "WaniKani New Reviews Notifier",
   "version": "1.0",
   "manifest_version": 2,
-  "description": "Display the number of minutes until your next reviews in WaniKani.",
+  "description": "Displays how many minutes you have until your next reviews in WaniKani.",
   "author": "Konrad Listwan <konrad.listwan@gmail.com>",
   "icons": {"128": "icon.png", "256": "icon-retina.png"},
   "background" : {
